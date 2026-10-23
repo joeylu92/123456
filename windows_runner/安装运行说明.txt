@@ -1,7 +1,6 @@
-一、安装 Python
-1. 打开 https://www.python.org/downloads/windows/
-2. 下载 Python 3.12。
-3. 安装时勾选 Add python.exe to PATH。
+一、环境要求
+1. 使用电脑中已经安装的 Python 3.12。
+2. 不要使用 Python 3.15 开发版。
 
 二、安装依赖
 1. 解压本文件夹。
@@ -10,14 +9,28 @@
    py -3.12 -m pip install -r requirements.txt
 
 三、运行
-1. 在紫鸟 LXN92:MAIN 中打开带知虾数据的 Shopee 搜索页。
-2. 在终端执行：
+1. 在紫鸟 LXN92:MAIN 中打开带知虾数据的 Shopee 搜索结果页。
+2. 保持该 Shopee 页面处于打开状态；可以返回终端。
+3. 在终端执行：
    py -3.12 collector.py
-3. 输入 1 后，在 5 秒内点击紫鸟商品列表页面。
-4. 每一页重复一次。
-5. 输入 2 导出去重 CSV。
+4. 输入 1。程序会自动查找并激活标题包含 Shopee 的窗口。
+5. 等待倒计时和采集完成，期间不要操作鼠标和键盘。
+6. 每一个搜索结果页重复一次。
+7. 输入 2 导出去重 CSV。
+8. 输入 3 可单独采集当前 Shopee 商品详情链接。
+9. 输入 0 退出。
+
+成功提示：
+已保存 X 个商品，其中 X 个已取得链接
 
 输出目录：
 C:\Users\你的用户名\ShopeeCollector
 
-注意：运行采集时不要操作键盘和鼠标。程序只复制当前页面地址和可见文字，不读取账号密码。
+输出文件：
+zhixia_candidates.csv
+selected_candidates.csv
+
+注意：
+- 程序只复制当前 Shopee 页面地址和可见数据，不读取账号密码。
+- 如果没有找到标题包含 Shopee 的窗口，程序会安全返回菜单。
+- 如果已取得链接数量为 0，请保留终端截图以便调整页面解析。

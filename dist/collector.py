@@ -1,0 +1,107 @@
+import csv
+import json
+import re
+import time
+from datetime import datetime
+from pathlib import Path
+
+import pyautogui
+import pyperclip
+
+OUT = Path.home() / "ShopeeCollector"
+RAW = OUT / "captures.jsonl"
+
+
+def countdown(seconds=5):
+    print(f"请在 {seconds} 秒内点击紫鸟商品列表页面……")
+    for left in range(seconds, 0, -1):
+        print(left, end=" ", flush=True)
+        time.sleep(1)
+    print()
+
+
+def copy_url():
+    pyautogui.hotkey("ctrl", "l")
+    pyautogui.hotkey("ctrl", "c")
+    time.sleep(0.5)
+    url = pyperclip.paste().strip()
+    pyautogui.press("esc")
+    return url
+
+
+def copy_page_text():
+    pyautogui.hotkey("ctrl", "a")
+    pyautogui.hotkey("ctrl", "c")
+    time.sleep(1)
+    return pyperclip.paste()
+
+
+def parse_zhixia(text):
+    blocks = re.split(r"(?=商品ID\s*[:：])", text)
+    rows = []
+    for block in blocks:
+        product_id = re.search(r"商品ID\s*[:：]\s*(\d+)", block)
+        if not product_id:
+            continue
+        def value(pattern):
+            match = re.search(pattern, block)
+            return match.group(1).strip() if match else ""
+        rows.append({
+            "product_id": product_id.group(1),
+            "listed_at": value(r"上架时间\s*[:：]\s*([^\r\n]+)"),
+            "likes": value(r"点赞数\s*[:：]\s*([\d,.]+)"),
+            "reviews": value(r"评论数\s*[:：]\s*([\d,.]+)"),
+            "rating": value(r"商品评分\s*[:：]\s*([\d.]+)"),
+            "sales_7d": value(r"近1天/7天销量[^:：]*[:：]\s*([^\r\n]+)"),
+            "sales_30d": value(r"近30天销量[^:：]*[:：]\s*([\d,.]+)"),
+            "growth_30d": value(r"近30天销量增长率\s*[:：]\s*([\d,.%-]+)"),
+        })
+    return rows
+
+
+def capture():
+    countdown()
+    url = copy_url()
+    text = copy_page_text()
+    rows = parse_zhixia(text)
+    OUT.mkdir(parents=True, exist_ok=True)
+    record = {"captured_at": datetime.now().isoformat(), "page_url": url, "items": rows}
+    with RAW.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+    print(f"已保存 {len(rows)} 个商品：{RAW}")
+
+
+def export_csv():
+    unique = {}
+    if not RAW.exists():
+        print("还没有采集数据。")
+        return
+    for line in RAW.read_text(encoding="utf-8").splitlines():
+        record = json.loads(line)
+        for item in record["items"]:
+            item["source_page"] = record["page_url"]
+            unique[item["product_id"]] = item
+    target = OUT / "zhixia_candidates.csv"
+    fields = ["product_id", "listed_at", "likes", "reviews", "rating", "sales_7d", "sales_30d", "growth_30d", "source_page"]
+    with target.open("w", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(unique.values())
+    print(f"已导出 {len(unique)} 个去重商品：{target}")
+
+
+def main():
+    pyautogui.PAUSE = 0.25
+    print("Shopee/知虾本地采集助手")
+    while True:
+        choice = input("\n1 采集当前知虾列表页\n2 导出去重CSV\n0 退出\n请选择：").strip()
+        if choice == "1":
+            capture()
+        elif choice == "2":
+            export_csv()
+        elif choice == "0":
+            break
+
+
+if __name__ == "__main__":
+    main()

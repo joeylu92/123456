@@ -13,7 +13,7 @@ RAW = OUT / "captures.jsonl"
 LINKS = OUT / "product_links.jsonl"
 
 
-def countdown(seconds=5):
+def countdown(seconds=10):
     print(f"请在 {seconds} 秒内点击紫鸟商品列表页面……")
     for left in range(seconds, 0, -1):
         print(left, end=" ", flush=True)

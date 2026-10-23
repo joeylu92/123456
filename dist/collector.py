@@ -14,7 +14,10 @@ LINKS = OUT / "product_links.jsonl"
 
 
 def countdown(seconds=10):
-    print(f"请在 {seconds} 秒内点击紫鸟商品列表页面……")
+    print("正在自动切换到上一个窗口，请确保上一个窗口是紫鸟 LXN92:MAIN……")
+    pyautogui.hotkey("alt", "tab")
+    time.sleep(1)
+    print(f"将在 {seconds} 秒后开始采集，请保持紫鸟窗口在最前面……")
     for left in range(seconds, 0, -1):
         print(left, end=" ", flush=True)
         time.sleep(1)

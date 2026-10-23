@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pyautogui
 import pyperclip
+import pygetwindow
 
 OUT = Path.home() / "ShopeeCollector"
 RAW = OUT / "captures.jsonl"
@@ -14,14 +15,25 @@ LINKS = OUT / "product_links.jsonl"
 
 
 def countdown(seconds=10):
-    print("正在自动切换到上一个窗口，请确保上一个窗口是紫鸟 LXN92:MAIN……")
-    pyautogui.hotkey("alt", "tab")
+    windows = [w for w in pygetwindow.getAllWindows() if "shopee" in (w.title or "").lower()]
+    if not windows:
+        print("未找到标题包含 Shopee 的窗口。请先在紫鸟 LXN92:MAIN 打开 Shopee 页面。")
+        return False
+    target = windows[0]
+    try:
+        if target.isMinimized:
+            target.restore()
+        target.activate()
+    except Exception as exc:
+        print(f"无法激活 Shopee 窗口：{exc}")
+        return False
     time.sleep(1)
     print(f"将在 {seconds} 秒后开始采集，请保持紫鸟窗口在最前面……")
     for left in range(seconds, 0, -1):
         print(left, end=" ", flush=True)
         time.sleep(1)
     print()
+    return True
 
 
 def copy_url():
@@ -80,7 +92,8 @@ def parse_zhixia(text):
 
 
 def capture():
-    countdown()
+    if not countdown():
+        return
     url = copy_url()
     if not url.startswith("http") or "shopee" not in url.lower():
         print(f"采集已取消：当前焦点不在 Shopee 页面（读取到：{url[:80]}）")
@@ -103,7 +116,8 @@ def capture():
 
 
 def capture_product_link():
-    countdown()
+    if not countdown():
+        return
     url = copy_url()
     if not url.startswith("http") or "shopee" not in url.lower():
         print(f"采集已取消：当前焦点不在 Shopee 商品页（读取到：{url[:80]}）")

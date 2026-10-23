@@ -14,7 +14,7 @@ RAW = OUT / "captures.jsonl"
 LINKS = OUT / "product_links.jsonl"
 
 
-def countdown(seconds=10):
+def activate_shopee():
     windows = [w for w in pygetwindow.getAllWindows() if "shopee" in (w.title or "").lower()]
     if not windows:
         print("未找到标题包含 Shopee 的窗口。请先在紫鸟 LXN92:MAIN 打开 Shopee 页面。")
@@ -27,19 +27,24 @@ def countdown(seconds=10):
     except Exception as exc:
         print(f"无法激活 Shopee 窗口：{exc}")
         return False
-    time.sleep(1)
-    print(f"将在 {seconds} 秒后开始采集，请保持紫鸟窗口在最前面……")
-    for left in range(seconds, 0, -1):
-        print(left, end=" ", flush=True)
-        time.sleep(1)
-    print()
+    time.sleep(2)
+    active = pygetwindow.getActiveWindowTitle() or ""
+    if "shopee" not in active.lower():
+        print(f"Shopee 窗口未取得焦点，当前活动窗口：{active}")
+        return False
+    print(f"已激活窗口：{active}")
     return True
 
 
 def copy_url():
+    active = pygetwindow.getActiveWindowTitle() or ""
+    if "shopee" not in active.lower():
+        return ""
+    pyperclip.copy("")
     pyautogui.hotkey("ctrl", "l")
+    time.sleep(0.8)
     pyautogui.hotkey("ctrl", "c")
-    time.sleep(0.5)
+    time.sleep(1)
     url = pyperclip.paste().strip()
     pyautogui.press("esc")
     return url
@@ -92,11 +97,12 @@ def parse_zhixia(text):
 
 
 def capture():
-    if not countdown():
+    if not activate_shopee():
         return
     url = copy_url()
     if not url.startswith("http") or "shopee" not in url.lower():
-        print(f"采集已取消：当前焦点不在 Shopee 页面（读取到：{url[:80]}）")
+        active = pygetwindow.getActiveWindowTitle() or ""
+        print(f"采集已取消：未复制到 Shopee 地址。当前窗口：{active}；读取到：{url[:80]}")
         return
     text = copy_page_text()
     rows = parse_zhixia(text)
@@ -116,7 +122,7 @@ def capture():
 
 
 def capture_product_link():
-    if not countdown():
+    if not activate_shopee():
         return
     url = copy_url()
     if not url.startswith("http") or "shopee" not in url.lower():

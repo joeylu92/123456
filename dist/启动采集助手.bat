@@ -7,11 +7,11 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-py -m pip install -r requirements.txt
+py -3.12 -m pip install -r requirements.txt
 if errorlevel 1 (
   echo 依赖安装失败，请检查网络后重试。
   pause
   exit /b 1
 )
-py collector.py
+py -3.12 collector.py
 pause

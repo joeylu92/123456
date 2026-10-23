@@ -7,12 +7,12 @@
 1. 解压本文件夹。
 2. 在文件夹空白处按住 Shift 并点鼠标右键，选择“在终端中打开”。
 3. 执行：
-   py -m pip install -r requirements.txt
+   py -3.12 -m pip install -r requirements.txt
 
 三、运行
 1. 在紫鸟 LXN92:MAIN 中打开带知虾数据的 Shopee 搜索页。
 2. 在终端执行：
-   py collector.py
+   py -3.12 collector.py
 3. 输入 1 后，在 5 秒内点击紫鸟商品列表页面。
 4. 每一页重复一次。
 5. 输入 2 导出去重 CSV。

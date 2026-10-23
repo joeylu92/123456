@@ -10,6 +10,7 @@ import pyperclip
 
 OUT = Path.home() / "ShopeeCollector"
 RAW = OUT / "captures.jsonl"
+LINKS = OUT / "product_links.jsonl"
 
 
 def countdown(seconds=5):
@@ -62,6 +63,9 @@ def parse_zhixia(text):
 def capture():
     countdown()
     url = copy_url()
+    if not url.startswith("http") or "shopee" not in url.lower():
+        print(f"采集已取消：当前焦点不在 Shopee 页面（读取到：{url[:80]}）")
+        return
     text = copy_page_text()
     rows = parse_zhixia(text)
     OUT.mkdir(parents=True, exist_ok=True)
@@ -71,18 +75,39 @@ def capture():
     print(f"已保存 {len(rows)} 个商品：{RAW}")
 
 
+def capture_product_link():
+    countdown()
+    url = copy_url()
+    if not url.startswith("http") or "shopee" not in url.lower():
+        print(f"采集已取消：当前焦点不在 Shopee 商品页（读取到：{url[:80]}）")
+        return
+    match = re.search(r"(?:-i\.|/product/)(\d+)[./](\d+)", url)
+    item_id = match.group(2) if match else ""
+    OUT.mkdir(parents=True, exist_ok=True)
+    with LINKS.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps({"captured_at": datetime.now().isoformat(), "product_id": item_id, "url": url}, ensure_ascii=False) + "\n")
+    print(f"已保存商品链接：{url}")
+
+
 def export_csv():
     unique = {}
     if not RAW.exists():
         print("还没有采集数据。")
         return
+    link_map = {}
+    if LINKS.exists():
+        for line in LINKS.read_text(encoding="utf-8").splitlines():
+            link = json.loads(line)
+            if link.get("product_id"):
+                link_map[link["product_id"]] = link["url"]
     for line in RAW.read_text(encoding="utf-8").splitlines():
         record = json.loads(line)
         for item in record["items"]:
             item["source_page"] = record["page_url"]
+            item["product_url"] = link_map.get(item["product_id"], "")
             unique[item["product_id"]] = item
     target = OUT / "zhixia_candidates.csv"
-    fields = ["product_id", "listed_at", "likes", "reviews", "rating", "sales_7d", "sales_30d", "growth_30d", "source_page"]
+    fields = ["product_id", "listed_at", "likes", "reviews", "rating", "sales_7d", "sales_30d", "growth_30d", "product_url", "source_page"]
     with target.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.DictWriter(handle, fieldnames=fields)
         writer.writeheader()
@@ -94,11 +119,13 @@ def main():
     pyautogui.PAUSE = 0.25
     print("Shopee/知虾本地采集助手")
     while True:
-        choice = input("\n1 采集当前知虾列表页\n2 导出去重CSV\n0 退出\n请选择：").strip()
+        choice = input("\n1 采集当前知虾列表页\n2 导出去重CSV\n3 采集当前Shopee商品链接\n0 退出\n请选择：").strip()
         if choice == "1":
             capture()
         elif choice == "2":
             export_csv()
+        elif choice == "3":
+            capture_product_link()
         elif choice == "0":
             break
 
